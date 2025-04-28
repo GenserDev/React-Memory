@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Memory Game</title>
+    <link rel="stylesheet" href="main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const cardImages = [
+            "./Assets/memory-images/go.png",
+            "./Assets/memory-images/erick.png",
+            "./Assets/memory-images/genserdev.png",
+            "./Assets/memory-images/docker.png",
+            "./Assets/memory-images/react.png",
+            "./Assets/memory-images/github.png",
+            "./Assets/memory-images/linux.png",
+            "./Assets/memory-images/php.png"
+        ];
+
+        // Componente principal del juego
+        function MemoryGame() {
+            const [cards, setCards] = useState([]);
+            const [flippedCards, setFlippedCards] = useState([]);
+            const [matchedPairs, setMatchedPairs] = useState([]);
+            const [movements, setMovements] = useState(0);
+            const [gameCompleted, setGameCompleted] = useState(false);
+            const [isChecking, setIsChecking] = useState(false);
+
+            // Inicializar el juego
+            useEffect(() => {
+                initializeGame();
+            }, []);
+
+            const initializeGame = () => {
+                // Crear pares de cartas
+                const cardPairs = [...cardImages, ...cardImages]
+                    .map((image, index) => ({
+                        id: index,
+                        image: image,
+                        isFlipped: false,
+                        isMatched: false
+                    }))
+                    .sort(() => Math.random() - 0.5);
+                
+                setCards(cardPairs);
+                setFlippedCards([]);
+                setMatchedPairs([]);
+                setMovements(0);
+                setGameCompleted(false);
+                setIsChecking(false);
+            };
+
+
+            const handleCardClick = (id) => {
+                // Restriccion para no voltear mas cartas luego de haber volteado un par
+                if (
+                    isChecking || 
+                    flippedCards.length === 2 || 
+                    flippedCards.includes(id) || 
+                    matchedPairs.includes(cards[id].image)
+                ) {
+                    return;
+                }
+
+
+                const newFlippedCards = [...flippedCards, id];
+                setFlippedCards(newFlippedCards);
+
+                // Verificacion de pares
+                if (newFlippedCards.length === 2) {
+                    setMovements(prev => prev + 1);
+                    const [firstId, secondId] = newFlippedCards;
+                    
+                    if (cards[firstId].image === cards[secondId].image) {
+                        // Evento es pareja
+                        setMatchedPairs([...matchedPairs, cards[firstId].image]);
+                        setFlippedCards([]);
+
+                        if (matchedPairs.length + 1 === cardImages.length) {
+                            setGameCompleted(true);
+                        }
+                    } else {
+                        // Evento no es pareja
+                        setIsChecking(true);
+                        setTimeout(() => {
+                            setFlippedCards([]);
+                            setIsChecking(false);
+                        }, 1000);
+                    }
+                }
+            };
+
+            return (
+                <div>
+                    <header>
+                        <nav className="navbar">
+                            <div className="left">
+                                <button className="boton-reiniciar" onClick={initializeGame}>Start Again</button>
+                            </div>
+                            <div className="center">
+                                <a className="navegation-var">
+                                    <img src="./Assets/header/genderdev-logo.png" alt="genserdev" />
+                                </a>
+                                <a className="titulo">React Memory Game</a>
+                                <a className="navegation-var">
+                                    <img src="./Assets/header/github-logo.png" alt="github" />
+                                </a>
+                            </div>
+                            <div className="right">
+                                <div className="titulo">Movements: <span className="movements-counter">{movements}</span></div>
+                            </div>
+                        </nav>
+                    </header>
+
+                    <div className="game-container">
+                        <div className="game-grid">
+                            {cards.map((card, index) => (
+                                <div 
+                                    key={index}
+                                    className={`card ${flippedCards.includes(index) || matchedPairs.includes(card.image) ? 'flipped' : ''}`}
+                                    onClick={() => handleCardClick(index)}
+                                >
+                                    <div className="card-inner">
+                                        <div className="card-front">?</div>
+                                        <div className="card-back">
+                                            <img 
+                                                src={card.image}
+                                                alt="Card" 
+                                                className="card-image"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {gameCompleted && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <h2 className="modal-title">¡Felicidades!</h2>
+                                <p className="modal-text">Has completado el juego en {movements} movimientos</p>
+                                <button className="modal-button" onClick={initializeGame}>Jugar de nuevo</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Renderizar el componente principal
+        ReactDOM.render(<MemoryGame />, document.getElementById('root'));
+    </script>
+</body>
+</html>
